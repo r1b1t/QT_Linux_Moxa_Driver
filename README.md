@@ -23,14 +23,15 @@ uygulanmış durumda).
 ## Klasör yapısı
 
 ```
-app/        MainWindow + main() (GUI)
+app/        MainWindow + mainwindow.ui (GUI, Qt Designer ile düzenlenebilir) + main()
 core/       İş mantığı: sistem/çekirdek tespiti, sürücü yönetimi, port yönetimi,
             (pkexec ile) ayrıcalıklı komut çalıştırma
 resources/
   driver/   Gömülü Moxa mxu11x0 sürücü kaynağı (uygulamayla birlikte paketlenir)
   scripts/  moxa-helper.sh — pkexec ile root olarak çalıştırılan tek yetkili betik
 packaging/
-  linux/    app.desktop, icon.png, DeployLinux.cmake, build-deb-installer.sh
+  linux/    app.desktop, icon.png, DeployLinux.cmake, build-deb-installer.sh, docker/
+package/    build_linux.sh, build_linux_ubuntu22.04.sh ve hazır .deb çıktıları
 version.txt Uygulama adı/sürümü (CMake ve paketleme betiği buradan okur)
 ```
 
@@ -64,33 +65,33 @@ sistemlerde ek uyarı gösterebilir; gerçek davranışı görmek için aşağı
 
 ## `.deb` paketi oluşturma (Ubuntu 22.04 ve 24.04 için ayrı ayrı)
 
-Her Ubuntu sürümü için paketi **o sürümün kendisinde** (veya aynı sürümün bir
-container/VM'inde) derleyip paketlemeniz gerekir, çünkü `build-deb-installer.sh`
-paketin `Depends:` alanına, derleme makinesinde fiilen kurulu olan Qt
-paketlerinin sürümünü yazar.
+Her Ubuntu sürümü için paketi **o sürümün kendisinde** derlemek gerekir, çünkü
+`build-deb-installer.sh` paketin `Depends:` alanına, derleme makinesinde
+fiilen kurulu olan Qt paketlerinin (ve glibc'nin) sürümünü yazar — 22.04'te
+`libqt6widgets6`, 24.04'te `libqt6widgets6t64` gibi. `package/` altındaki
+iki betik bu farkı kendisi hallediyor:
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j"$(nproc)" --target deploy_linux
-./packaging/linux/build-deb-installer.sh \
-    build/package/moxauportmanager \
-    package/linux-ubuntu24.04 \
-    1.0.0 \
-    "Moxa UPort Manager" \
-    ubuntu24.04
+./package/build_linux.sh                 # bu makinenin kendi Ubuntu sürümü için
+./package/build_linux_ubuntu22.04.sh      # 24.04'te çalışsanız bile, Docker içinde
+                                           # gerçek bir Ubuntu 22.04 ile derler
 ```
 
-`ubuntu22.04` için aynı adımları o sürümde tekrarlayın (son argümanı
-`ubuntu22.04` yapın). Üretilen `.deb`:
+Çıktı `package/linux-ubuntu<sürüm>/moxauportmanager-<versiyon>-ubuntu<sürüm>-amd64.deb`
+olarak oluşur (bu depoda hazır iki örnek de mevcut). Kurulum:
 
 ```bash
 sudo dpkg -i package/linux-ubuntu24.04/moxauportmanager-1.0.0-ubuntu24.04-amd64.deb
 sudo apt -f install   # eksik bağımlılık varsa
 ```
 
-kurulumu `/opt/moxauportmanager` altına yapar, `/usr/bin/moxauportmanager`
+`/opt/moxauportmanager` altına kurar, `/usr/bin/moxauportmanager`
 başlatıcısını ve uygulama menüsü girdisini ekler, kullanıcıyı `dialout`
 grubuna dahil eder (seri port erişimi için).
+
+`docker` yoksa 22.04 betiği çalışmaz; o durumda gerçek bir Ubuntu 22.04
+makinesinde/VM'inde `./package/build_linux.sh` çalıştırmak yeterlidir —
+sonucu otomatik olarak `linux-ubuntu22.04/` altına yazar.
 
 ## Manuel doğrulama / sorun giderme
 

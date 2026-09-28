@@ -71,8 +71,6 @@ CMakeLists.txt.user*
 /build*/
 /.qtcreator/
 
-/package/
-
 *.ko
 *.ko.cmd
 *.mod
