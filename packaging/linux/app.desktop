@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Moxa UPort Manager
+Comment=Moxa UPort sürücüsünü ve RS-232/422/485 port ayarlarını yönetir
+Exec=/usr/bin/__APP_ID__
+Icon=__APP_ID__
+Terminal=false
+Categories=System;Settings;
+StartupWMClass=MoxaUportManager
